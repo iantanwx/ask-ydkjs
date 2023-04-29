@@ -65,3 +65,8 @@ end
 gem "react_on_rails", "= 13.3"
 
 gem "shakapacker", "= 6.6"
+
+
+gem "rubocop", "~> 1.50", require: false
+
+gem "reek", "~> 6.1"
