@@ -70,3 +70,7 @@ gem "shakapacker", "= 6.6"
 gem "rubocop", "~> 1.50", require: false
 
 gem "reek", "~> 6.1"
+
+gem "ruby-openai", "~> 4.0"
+
+gem "dotenv", "~> 2.8"
