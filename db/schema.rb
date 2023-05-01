@@ -10,13 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_29_060225) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_01_030705) do
   create_table "questions", force: :cascade do |t|
     t.text "question"
     t.text "context"
     t.text "answer"
     t.integer "ask_count"
-    t.string "audio_src_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

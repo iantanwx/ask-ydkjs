@@ -14,6 +14,14 @@ class Api::V1::QuestionController < ApplicationController
 
   def create
     puts "question: #{question}"
+    existing_question = Question.find_by(question:)
+    if existing_question
+      puts "found existing question: #{existing_question}"
+      render json: { status: 'success', id: existing_question.id, question: existing_question.question,
+                     answer: existing_question.answer }
+      return
+    end
+
     embeddings_path = File.join(Rails.root, 'app', 'assets', 'data', 'ydkjs.pdf.embeddings.csv')
     embeddings = CSV.read(embeddings_path).drop(1)
     openai_client = OpenAI::Client.new(access_token: ENV['OPENAI_API_KEY'])
@@ -32,11 +40,12 @@ class Api::V1::QuestionController < ApplicationController
     sorted = dotted.sort_by { |row| -row[:dot_product] }
     completion, context = get_completion(question, sorted)
     puts "completion: #{completion}"
-    voice = generate_voice(completion)
-    question_record = Question.new(question:, answer: completion, context:, audio_src_url: voice)
+    # TODO: add this back when Resemble lets us generate sync clips
+    # voice = generate_voice(completion)
+    question_record = Question.new(question:, answer: completion, context:)
     question_record.save
 
-    render json: { status: 'success', id: question_record.id, answer: completion, voice: }
+    render json: { status: 'success', id: question_record.id, question:, answer: completion }
   end
 
   private
