@@ -1,6 +1,6 @@
-require_relative "boot"
+require_relative 'boot'
 
-require "rails/all"
+require 'rails/all'
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -18,5 +18,10 @@ module AskmybookRb
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+    config.max_section_len = 500
+    config.separator = "\n* "
+    config.separator_len = 3
+    config.project_uuid = '39071f2b'
+    config.voice_uuid = '7e1f63e7'
   end
 end

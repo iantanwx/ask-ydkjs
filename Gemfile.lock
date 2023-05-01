@@ -232,6 +232,8 @@ GEM
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
     sqlite3 (1.6.2-arm64-darwin)
+    tailwindcss-rails (2.0.29-arm64-darwin)
+      railties (>= 6.0.0)
     thor (1.2.1)
     timeout (0.3.2)
     tzinfo (2.0.6)
@@ -275,6 +277,7 @@ DEPENDENCIES
   shakapacker (= 6.6)
   sprockets-rails
   sqlite3 (~> 1.4)
+  tailwindcss-rails (~> 2.0)
   tzinfo-data
   web-console
   webdrivers

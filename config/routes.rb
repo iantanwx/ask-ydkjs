@@ -5,5 +5,6 @@ Rails.application.routes.draw do
     end
   end
 
-  root 'hello_world#index'
+  root 'home#index'
+  get '/*path', to: 'home#index'
 end

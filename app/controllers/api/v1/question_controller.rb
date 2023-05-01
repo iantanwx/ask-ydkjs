@@ -1,20 +1,17 @@
 require 'csv'
 require 'openai'
-require 'dotenv/load'
 require 'matrix'
 require 'resemble'
 
 Resemble.api_key = ENV['RESEMBLE_API_KEY']
-MAX_SECTION_LEN = 500
-SEPARATOR = "\n* "
-SEPARATOR_LEN = 3
 
 class Api::V1::QuestionController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:create]
 
   def create
     puts "question: #{question}"
-    existing_question = Question.find_by(question:)
+    with_question_mark = ensure_question_mark(question)
+    existing_question = Question.find_by(question: with_question_mark)
     if existing_question
       puts "found existing question: #{existing_question}"
       render json: { status: 'success', id: existing_question.id, question: existing_question.question,
@@ -27,7 +24,7 @@ class Api::V1::QuestionController < ApplicationController
     openai_client = OpenAI::Client.new(access_token: ENV['OPENAI_API_KEY'])
     response = openai_client.embeddings(parameters: {
                                           model: 'text-search-curie-query-001',
-                                          input: question
+                                          input: with_question_mark
                                         })
     query_embedding = Vector.elements(response.dig('data', 0, 'embedding'))
 
@@ -38,14 +35,14 @@ class Api::V1::QuestionController < ApplicationController
     end
 
     sorted = dotted.sort_by { |row| -row[:dot_product] }
-    completion, context = get_completion(question, sorted)
+    completion, context = get_completion(with_question_mark, sorted)
     puts "completion: #{completion}"
     # TODO: add this back when Resemble lets us generate sync clips
     # voice = generate_voice(completion)
-    question_record = Question.new(question:, answer: completion, context:)
+    question_record = Question.new(question: with_question_mark, answer: completion, context:)
     question_record.save
 
-    render json: { status: 'success', id: question_record.id, question:, answer: completion }
+    render json: { status: 'success', id: question_record.id, question: with_question_mark, answer: completion }
   end
 
   private
@@ -55,15 +52,15 @@ class Api::V1::QuestionController < ApplicationController
     chosen_sections_len = 0
 
     sorted_embeddings.each do |doc|
-      chosen_sections_len += doc[:tokens] + SEPARATOR_LEN
-      if chosen_sections_len > MAX_SECTION_LEN
-        space_left = MAX_SECTION_LEN - chosen_sections_len - SEPARATOR.length
+      chosen_sections_len += doc[:tokens] + Rails.configuration.separator_len
+      if chosen_sections_len > Rails.configuration.max_section_len
+        space_left = Rails.configuration.max_section_len - chosen_sections_len - Rails.configuration.separator_len
         chosen_sections.append(
-          SEPARATOR + doc[:text].slice(0...space_left)
+          Rails.configuration.separator + doc[:text].slice(0...space_left)
         )
         break
       end
-      chosen_sections.append(SEPARATOR + doc[:text])
+      chosen_sections.append(Rails.configuration.separator + doc[:text])
     end
 
     header = "Kyle Simpson is a JavaScript developer and the author of the You Don't Know JS (YDKJS) series of books. These are questions and answers by him. Please keep your answers to three sentences maximum, and speak in complete sentences. Stop speaking once your point is made.\n\nContext that may be useful, pulled from You Don't Know JS:\n"
@@ -97,12 +94,9 @@ class Api::V1::QuestionController < ApplicationController
   end
 
   def generate_voice(_answer)
-    project_uuid = '39071f2b'
-    voice_uuid = '7e1f63e7'
-
     response = Resemble::V2::Clip.create_sync(
-      project_uuid,
-      voice_uuid,
+      Rails.configuration.project_uuid,
+      Rails.configuration.voice_uuid,
       question,
       title: nil,
       sample_rate: nil,
@@ -117,6 +111,10 @@ class Api::V1::QuestionController < ApplicationController
     puts "response: #{response}"
 
     response['item']['audio_src_url']
+  end
+
+  def ensure_question_mark(str)
+    str.end_with?('?') ? str : str + '?'
   end
 
   def question

@@ -78,3 +78,5 @@ gem "dotenv", "~> 2.8"
 gem "resemble", "~> 1.2"
 
 gem "httparty", "~> 0.21.0"
+
+gem "tailwindcss-rails", "~> 2.0"
