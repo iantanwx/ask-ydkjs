@@ -4,14 +4,10 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_PASSWORD: dangerous
     ports:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
 volumes:
   db-data:
-    driver_opts:
-      type: none
-      device: ./tmp/db-data
-      o: bind
