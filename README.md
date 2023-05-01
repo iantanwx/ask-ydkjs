@@ -1,24 +1,42 @@
-# README
+# Introduction
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+This is a Rails app I hacked together over a weekend that lets you query YDKJS by [Kyle Simpson](https://twitter.com/getifyAtSocket) with natural language. It is the first Rails app I've built, so it might not be very idiomatic.
 
-Things you may want to cover:
+Under the hood it uses OpenAI embeddings and completions.
 
-* Ruby version
+It is inspired by [Askmybook](https://askmybook.com/), written by Sahil Lavingia, CEO of Gumroad.
 
-* System dependencies
+## Development
 
-* Configuration
+This is a typical Rails app, so you should be able to get it up and running with the following:
 
-* Database creation
+```shell
+# install dependencies
+bundle install
+yarn install
 
-* Database initialization
+# start postgres container
+docker-compose up -d
 
-* How to run the test suite
+# create the database for dev
+rails db:create
 
-* Services (job queues, cache servers, search engines, etc.)
+# migrate
+rails db: migrate
+```
 
-* Deployment instructions
+## Migrations
 
-* ...
+```shell
+# deployed to railway, so make sure you have the cli installed
+railway link
+railway service
+
+# get into the subshell
+# ensure that PGHOST, PGPORT, PGUSER and PGPASSWORD are set in railway
+railway shell
+
+# set up the prod db
+rails db:create
+rails db:migrate
+```
