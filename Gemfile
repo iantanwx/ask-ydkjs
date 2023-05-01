@@ -74,3 +74,7 @@ gem "reek", "~> 6.1"
 gem "ruby-openai", "~> 4.0"
 
 gem "dotenv", "~> 2.8"
+
+gem "resemble", "~> 1.2"
+
+gem "httparty", "~> 0.21.0"

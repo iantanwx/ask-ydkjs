@@ -2,7 +2,9 @@ require 'csv'
 require 'openai'
 require 'dotenv/load'
 require 'matrix'
+require 'resemble'
 
+Resemble.api_key = ENV['RESEMBLE_API_KEY']
 MAX_SECTION_LEN = 500
 SEPARATOR = "\n* "
 SEPARATOR_LEN = 3
@@ -28,10 +30,13 @@ class Api::V1::QuestionController < ApplicationController
     end
 
     sorted = dotted.sort_by { |row| -row[:dot_product] }
-    completion, = get_completion(question, sorted)
+    completion, context = get_completion(question, sorted)
     puts "completion: #{completion}"
+    voice = generate_voice(completion)
+    question_record = Question.new(question:, answer: completion, context:, audio_src_url: voice)
+    question_record.save
 
-    render json: { status: 'success', text: sorted[0][:text] }
+    render json: { status: 'success', id: question_record.id, answer: completion, voice: }
   end
 
   private
@@ -80,6 +85,29 @@ class Api::V1::QuestionController < ApplicationController
                                            max_tokens: 150
                                          })
     [response.dig('choices', 0, 'text'), context]
+  end
+
+  def generate_voice(_answer)
+    project_uuid = '39071f2b'
+    voice_uuid = '7e1f63e7'
+
+    response = Resemble::V2::Clip.create_sync(
+      project_uuid,
+      voice_uuid,
+      question,
+      title: nil,
+      sample_rate: nil,
+      output_format: nil,
+      precision: nil,
+      include_timestamps: nil,
+      is_public: nil,
+      is_archived: nil,
+      raw: nil
+    )
+
+    puts "response: #{response}"
+
+    response['item']['audio_src_url']
   end
 
   def question
