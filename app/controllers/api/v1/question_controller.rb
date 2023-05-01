@@ -19,8 +19,7 @@ class Api::V1::QuestionController < ApplicationController
       return
     end
 
-    embeddings_path = File.join(Rails.root, 'app', 'assets', 'data', 'ydkjs.pdf.embeddings.csv')
-    embeddings = CSV.read(embeddings_path).drop(1)
+    embeddings = load_embeddings
     openai_client = OpenAI::Client.new(access_token: ENV['OPENAI_API_KEY'])
     response = openai_client.embeddings(parameters: {
                                           model: 'text-search-curie-query-001',
@@ -46,6 +45,13 @@ class Api::V1::QuestionController < ApplicationController
   end
 
   private
+
+  def load_embeddings
+    Rails.cache.fetch('ydkjs_embeddings') do
+      embeddings_path = File.join(Rails.root, 'app', 'assets', 'data', 'ydkjs.pdf.embeddings.csv')
+      CSV.read(embeddings_path).drop(1)
+    end
+  end
 
   def construct_prompt(question, sorted_embeddings)
     chosen_sections = []
