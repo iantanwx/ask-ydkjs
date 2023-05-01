@@ -20,21 +20,8 @@ class Api::V1::QuestionController < ApplicationController
     end
 
     embeddings = load_embeddings
-    openai_client = OpenAI::Client.new(access_token: ENV['OPENAI_API_KEY'])
-    response = openai_client.embeddings(parameters: {
-                                          model: 'text-search-curie-query-001',
-                                          input: with_question_mark
-                                        })
-    query_embedding = Vector.elements(response.dig('data', 0, 'embedding'))
-
-    dotted = embeddings.map do |row|
-      doc_embedding = Vector.elements(row[3..-1].map(&:to_f))
-      dot_product = doc_embedding.inner_product(query_embedding)
-      { text: row[1], tokens: row[2].to_i, dot_product: }
-    end
-
-    sorted = dotted.sort_by { |row| -row[:dot_product] }
-    completion, context = get_completion(with_question_mark, sorted)
+    ranked_embeddings = rank_by_relevance(embeddings, with_question_mark)
+    completion, context = get_completion(with_question_mark, ranked_embeddings)
     puts "completion: #{completion}"
     # TODO: add this back when Resemble lets us generate sync clips
     # voice = generate_voice(completion)
@@ -51,6 +38,21 @@ class Api::V1::QuestionController < ApplicationController
       embeddings_path = File.join(Rails.root, 'app', 'assets', 'data', 'ydkjs.pdf.embeddings.csv')
       CSV.read(embeddings_path).drop(1)
     end
+  end
+
+  def rank_by_relevance(embeddings, question)
+    openai_client = OpenAI::Client.new(access_token: ENV['OPENAI_API_KEY'])
+    response = openai_client.embeddings(parameters: {
+                                          model: 'text-search-curie-query-001',
+                                          input: question
+                                        })
+    query_embedding = Vector.elements(response.dig('data', 0, 'embedding'))
+    dotted = embeddings.map do |row|
+      doc_embedding = Vector.elements(row[3..-1].map(&:to_f))
+      dot_product = doc_embedding.inner_product(query_embedding)
+      { text: row[1], tokens: row[2].to_i, dot_product: }
+    end
+    dotted.sort_by { |row| -row[:dot_product] }
   end
 
   def construct_prompt(question, sorted_embeddings)
