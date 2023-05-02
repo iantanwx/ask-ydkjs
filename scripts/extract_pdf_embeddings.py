@@ -1,6 +1,5 @@
 #!python
 import argparse
-import csv
 import os
 
 import openai
@@ -10,8 +9,7 @@ from PyPDF2 import PdfReader
 from transformers import GPT2TokenizerFast
 
 # Use load_env to trace the path of .env:
-load_dotenv('.env')
-
+load_dotenv(".env")
 
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -39,17 +37,16 @@ def extract_pages(
 
     content = " ".join(page_text.split())
     print("page text: " + content)
-    outputs = [("Page " + str(index), content,
-                count_tokens(content)+4) + tuple(get_embedding(content, DOC_EMBEDDINGS_MODEL))]
+    outputs = [
+        ("Page " + str(index), content, count_tokens(content) + 4)
+        + tuple(get_embedding(content, DOC_EMBEDDINGS_MODEL))
+    ]
 
     return outputs
 
 
 def get_embedding(text: str, model: str) -> list[float]:
-    result = openai.Embedding.create(
-        model=model,
-        input=text
-    )
+    result = openai.Embedding.create(model=model, input=text)
     return result["data"][0]["embedding"]
 
 
@@ -63,9 +60,8 @@ def compute_doc_embeddings(df: pd.DataFrame) -> dict[tuple[str], list[float]]:
 
     Return a dictionary that maps between each embedding vector and the index of the row that it corresponds to.
     """
-    return {
-        idx: get_doc_embedding(r.content) for idx, r in df.iterrows()
-    }
+    return {idx: get_doc_embedding(r.content) for idx, r in df.iterrows()}
+
 
 # CSV with exactly these named columns:
 # "title", "0", "1", ... up to the length of the embedding vectors.
@@ -79,21 +75,12 @@ def main(pdf: str):
     for page in reader.pages:
         res += extract_pages(page.extract_text(), i)
         i += 1
-    df = pd.DataFrame(
-        res, columns=["title", "content", "tokens"] + list(range(4096)))
+    df = pd.DataFrame(res, columns=["title", "content", "tokens"] + list(range(4096)))
     df = df[df.tokens < 2046]
-    df = df.reset_index().drop('index', axis=1)  # reset index
+    df = df.reset_index().drop("index", axis=1)  # reset index
     df.head()
 
-    df.to_csv(f'{pdf}.embeddings.csv', index=False)
-
-    # doc_embeddings = compute_doc_embeddings(df)
-
-    # with open(f'{filename}.embeddings.csv', 'w') as f:
-    #     writer = csv.writer(f)
-    #     writer.writerow(["title"] + list(range(4096)))
-    #     for i, embedding in list(doc_embeddings.items()):
-    #         writer.writerow(["Page " + str(i + 1)] + embedding)
+    df.to_csv(f"{pdf}.embeddings.csv", index=False)
 
 
 if __name__ == "__main__":
